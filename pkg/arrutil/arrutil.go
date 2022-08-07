@@ -1,42 +1,59 @@
 // package arrutil helps perform common but verbose tasks on arrays and slices.
+//
+// Operations are O(n) unless otherwise noted.
 package arrutil
 
-// Contains checks if a value exists in a slice.
+// file arrutil.go contains the types and convenience functions used by components of package arrutil
+
+// type arrlookup serves to assist with repeated searches of arrays/slices.
 //
-// This function must be called with a comparable value (can == and !=) and a slice with
-// a matching type.
-func Contains[K comparable](arr []K, val K) bool {
-	for _, item := range arr {
-		if item == val {
-			return true
-		}
-	}
-	return false
+// This is not intended to be a general-use solution for searching; it is specialized
+// for inorder traversal, and repetitive searching, of a slice of values, where repeated generic Contains()
+// would not perform well enough.
+//
+// Correct uses:
+//   - functions that require repeated searching of a slice
+//   - functions that want to iterate unique array values in-order
+//
+// Incorrect uses:
+//   - functions that only need to search a slice < 3 times
+//   - functions that need to operate on duplicate slice values
+type arrLookup[K comparable] struct {
+	lkp map[K]bool
+	arr []K
 }
 
-// Find the first index where a value occurs in a slice.
-//
-// This function must be called with a comparable value (can == and !=) and a slice with
-// a matching type. Returns an index, or len(arr) if the value is not found.
-func FindFirst[K comparable](arr []K, val K) int {
-	for idx, item := range arr {
-		if item == val {
-			return idx
+// Create a new arrLookup from an array of comparable type K.
+func newLookup[K comparable](from []K) *arrLookup[K] {
+	lkp := &arrLookup[K]{
+		make(map[K]bool),
+		make([]K, len(from)),
+	}
+	ct := 0
+	for _, item := range from {
+		if _, exists := lkp.lkp[item]; !exists {
+			lkp.lkp[item] = true
+			lkp.arr[ct] = item
+			ct++
 		}
 	}
-	return len(arr)
+	lkp.arr = lkp.arr[:ct]
+	return lkp
 }
 
-// Find all indices where a value occurs in a slice.
-//
-// This function must be called with a comparable value (can == and !=) and a slice with
-// a matching type. Returns a slice of int indices, with len 0 if the value is never found.
-func FindAll[K comparable](arr []K, val K) []int {
-	out := make([]int, 0, len(arr))
-	for idx, item := range arr {
-		if item == val {
-			out = append(out, idx)
-		}
+func (l *arrLookup[K]) inorder(f func(K)) {
+	for _, item := range l.arr {
+		f(item)
 	}
-	return out
+}
+
+func (l *arrLookup[K]) contains(item K) bool {
+	_, ok := l.lkp[item]
+	return ok
+}
+
+// Get a unique array by creating a lookup then returning its underlying array
+func unique[K comparable](from []K) []K {
+	lkp := newLookup(from)
+	return lkp.arr
 }
