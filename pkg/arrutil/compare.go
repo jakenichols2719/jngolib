@@ -9,7 +9,6 @@ const OpAnd ArrayCompareFlag = 1
 
 // A OR B: any element in either, preserve order of A then B
 const OpOr ArrayCompareFlag = 2
-const OpXor ArrayCompareFlag = 4
 
 // Create a slice where each item is in A *and* B.
 func compareAnd[K comparable](A []K, B []K) []K {
